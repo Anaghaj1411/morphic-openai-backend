@@ -1,0 +1,14 @@
+{
+  "name": "morphic-openai-backend",
+  "version": "1.0.0",
+  "description": "MORPHIC OpenAI backend",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "cors": "^2.8.5",
+    "openai": "^7.20.0"
+  }
+}
