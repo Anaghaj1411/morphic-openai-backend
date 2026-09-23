@@ -2,9 +2,21 @@ import express from "express";
 import cors from "cors";
 import OpenAI from "openai";
 import { retrieveKnowledge } from "./knowledge/retriever.js";
+import { rateLimit } from "express-rate-limit";
 
 const app = express();
 const PORT = process.env.PORT || 10000;
+const aiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: "Too many AI requests. Please try again later."
+  }
+});
+
 
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
@@ -54,7 +66,7 @@ app.get("/api/rag-test", async (req, res) => {
 });
 
 // Safe AI pipeline test
-app.post("/api/feedback-test", async (req, res) => {
+app.post("/api/feedback", aiLimiter, async (req, res) => {
   try {
     const sculptureData = req.body;
 
