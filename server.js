@@ -6,6 +6,8 @@ import { rateLimit } from "express-rate-limit";
 
 const app = express();
 const PORT = process.env.PORT || 10000;
+
+// Rate limit only the real AI endpoint
 const aiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 10,
@@ -17,17 +19,21 @@ const aiLimiter = rateLimit({
   }
 });
 
-
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
 
+// OpenAI client
 const client = process.env.OPENAI_API_KEY
   ? new OpenAI({
       apiKey: process.env.OPENAI_API_KEY
     })
   : null;
 
-// Health check
+
+// ==========================================
+// HEALTH CHECK
+// ==========================================
+
 app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
@@ -35,7 +41,11 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// RAG retrieval test
+
+// ==========================================
+// RAG RETRIEVAL TEST
+// ==========================================
+
 app.get("/api/rag-test", async (req, res) => {
   try {
     const query = req.query.q;
@@ -65,8 +75,13 @@ app.get("/api/rag-test", async (req, res) => {
   }
 });
 
-// Safe AI pipeline test
-app.post("/api/feedback", aiLimiter, async (req, res) => {
+
+// ==========================================
+// SAFE AI PIPELINE TEST
+// This does NOT call OpenAI
+// ==========================================
+
+app.post("/api/feedback-test", async (req, res) => {
   try {
     const sculptureData = req.body;
 
@@ -119,7 +134,7 @@ app.post("/api/feedback", aiLimiter, async (req, res) => {
       .map((result) => result.content)
       .join("\n\n---\n\n");
 
-    // Return the prepared data without calling OpenAI
+    // Return prepared data WITHOUT calling OpenAI
     res.json({
       success: true,
       testMode: true,
@@ -143,9 +158,12 @@ app.post("/api/feedback", aiLimiter, async (req, res) => {
 });
 
 
+// ==========================================
+// REAL AI FEEDBACK
+// This endpoint can call OpenAI
+// ==========================================
 
-// AI feedback
-app.post("/api/feedback", async (req, res) => {
+app.post("/api/feedback", aiLimiter, async (req, res) => {
   try {
     const sculptureData = req.body;
 
@@ -228,14 +246,18 @@ app.post("/api/feedback", async (req, res) => {
         format: {
           type: "json_schema",
           name: "morphic_ai_feedback",
-          description: "Structured AI feedback for the MORPHIC sculpture application.",
+          description:
+            "Structured AI feedback for the MORPHIC sculpture application.",
           strict: true,
+
           schema: {
             type: "object",
+
             properties: {
               message: {
                 type: "string"
               },
+
               feedbackType: {
                 type: "string",
                 enum: [
@@ -246,8 +268,10 @@ app.post("/api/feedback", async (req, res) => {
                   "encouragement"
                 ]
               },
+
               action: {
                 type: "object",
+
                 properties: {
                   type: {
                     type: "string",
@@ -258,16 +282,25 @@ app.post("/api/feedback", async (req, res) => {
                       "play_encouragement"
                     ]
                   },
+
                   target: {
                     type: "string"
                   },
+
                   value: {
                     type: "number"
                   }
                 },
-                required: ["type", "target", "value"],
+
+                required: [
+                  "type",
+                  "target",
+                  "value"
+                ],
+
                 additionalProperties: false
               },
+
               priority: {
                 type: "string",
                 enum: [
@@ -276,10 +309,12 @@ app.post("/api/feedback", async (req, res) => {
                   "high"
                 ]
               },
+
               cooldownSeconds: {
                 type: "number"
               }
             },
+
             required: [
               "message",
               "feedbackType",
@@ -287,6 +322,7 @@ app.post("/api/feedback", async (req, res) => {
               "priority",
               "cooldownSeconds"
             ],
+
             additionalProperties: false
           }
         }
@@ -310,6 +346,11 @@ app.post("/api/feedback", async (req, res) => {
     });
   }
 });
+
+
+// ==========================================
+// START SERVER
+// ==========================================
 
 app.listen(PORT, () => {
   console.log(`MORPHIC backend running on port ${PORT}`);
