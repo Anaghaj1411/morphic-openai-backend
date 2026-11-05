@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 10000;
 // Rate limit only the real AI endpoint
 const aiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 10,
+  limit: 30,
   standardHeaders: "draft-8",
   legacyHeaders: false,
   message: {
@@ -117,24 +117,24 @@ app.post("/api/feedback-test", async (req, res) => {
       });
     }
 
-    // Build the RAG search query
     const userQuestion = sculptureData.context.userQuestion || "";
+    const currentTool = sculptureData.context.currentTool || "";
+    const currentStage = sculptureData.context.currentStage || "";
 
     const knowledgeQuery = [
-      sculptureData.eventType,
+      currentTool,
+      currentStage,
       userQuestion
     ]
       .filter(Boolean)
       .join(" ");
 
-    // Retrieve relevant knowledge
     const knowledgeResults = await retrieveKnowledge(knowledgeQuery);
 
     const knowledgeContext = knowledgeResults
       .map((result) => result.content)
       .join("\n\n---\n\n");
 
-    // Return prepared data WITHOUT calling OpenAI
     res.json({
       success: true,
       testMode: true,
@@ -199,7 +199,6 @@ app.post("/api/feedback", aiLimiter, async (req, res) => {
       });
     }
 
-    // Check whether the OpenAI API is configured
     if (!client) {
       return res.status(500).json({
         success: false,
@@ -207,34 +206,37 @@ app.post("/api/feedback", aiLimiter, async (req, res) => {
       });
     }
 
-    // Build a search query for the RAG system
     const userQuestion = sculptureData.context.userQuestion || "";
+    const currentTool = sculptureData.context.currentTool || "";
+    const currentStage = sculptureData.context.currentStage || "";
 
     const knowledgeQuery = [
-      sculptureData.eventType,
+      currentTool,
+      currentStage,
       userQuestion
     ]
       .filter(Boolean)
       .join(" ");
 
-    // Retrieve relevant MORPHIC knowledge
     const knowledgeResults = await retrieveKnowledge(knowledgeQuery);
 
     const knowledgeContext = knowledgeResults
       .map((result) => result.content)
       .join("\n\n---\n\n");
 
-    // Send current sculpture data + retrieved knowledge to OpenAI
     const response = await client.responses.create({
       model: process.env.OPENAI_MODEL || "gpt-5.5",
 
       instructions:
-        "You are an AI assistant for MORPHIC, a digital sculpture project. " +
-        "Use the provided MORPHIC knowledge and current sculpture data to " +
-        "provide short, helpful, contextual creative feedback. " +
-        "Do not execute Unity actions or modify the sculpture directly. " +
-        "Treat the current sculpture data as the current state of the application. " +
-        "Return only the required structured response.",
+        "You are Lisa, the help assistant for MORPHIC. " +
+        "Use the MORPHIC knowledge (the game manual) and current sculpture data. " +
+        "Answer the player's userQuestion. Do not invent a next sculpting task unless they asked what to do next. " +
+        "Give a short, easy, straight-to-the-point answer. Prefer 2 to 5 numbered steps. " +
+        "Use exact on-screen button labels (SELECT PART, CHANGE COLOR, LANTERN TASSEL, SEND, DONE). " +
+        "Use context.currentTool so lantern, teapot, and keris stay distinct. " +
+        "If currentStage is sculpt, they are still using gestures. If customize, start from the COLOR PALETTE. " +
+        "Do not click buttons, run Unity code, or change the sculpture. " +
+        "Return only the required structured response. For how-to questions use feedbackType explanation.",
 
       input:
         "Relevant MORPHIC knowledge:\n\n" +
@@ -329,7 +331,6 @@ app.post("/api/feedback", aiLimiter, async (req, res) => {
       }
     });
 
-    // Convert the structured AI response into a JavaScript object
     const aiFeedback = JSON.parse(response.output_text);
 
     res.json({
