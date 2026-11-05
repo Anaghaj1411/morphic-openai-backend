@@ -7,7 +7,6 @@ import { rateLimit } from "express-rate-limit";
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// Rate limit only the real AI endpoint
 const aiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 30,
@@ -22,17 +21,11 @@ const aiLimiter = rateLimit({
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
 
-// OpenAI client
 const client = process.env.OPENAI_API_KEY
   ? new OpenAI({
       apiKey: process.env.OPENAI_API_KEY
     })
   : null;
-
-
-// ==========================================
-// HEALTH CHECK
-// ==========================================
 
 app.get("/api/health", (req, res) => {
   res.json({
@@ -40,11 +33,6 @@ app.get("/api/health", (req, res) => {
     service: "MORPHIC OpenAI Backend"
   });
 });
-
-
-// ==========================================
-// RAG RETRIEVAL TEST
-// ==========================================
 
 app.get("/api/rag-test", async (req, res) => {
   try {
@@ -75,17 +63,10 @@ app.get("/api/rag-test", async (req, res) => {
   }
 });
 
-
-// ==========================================
-// SAFE AI PIPELINE TEST
-// This does NOT call OpenAI
-// ==========================================
-
 app.post("/api/feedback-test", async (req, res) => {
   try {
     const sculptureData = req.body;
 
-    // Validate the request
     if (!sculptureData || typeof sculptureData !== "object") {
       return res.status(400).json({
         success: false,
@@ -157,17 +138,10 @@ app.post("/api/feedback-test", async (req, res) => {
   }
 });
 
-
-// ==========================================
-// REAL AI FEEDBACK
-// This endpoint can call OpenAI
-// ==========================================
-
 app.post("/api/feedback", aiLimiter, async (req, res) => {
   try {
     const sculptureData = req.body;
 
-    // Validate the request
     if (!sculptureData || typeof sculptureData !== "object") {
       return res.status(400).json({
         success: false,
@@ -229,13 +203,13 @@ app.post("/api/feedback", aiLimiter, async (req, res) => {
 
       instructions:
         "You are Lisa, the help assistant for MORPHIC. " +
-        "Use the MORPHIC knowledge (the game manual) and current sculpture data. " +
-        "Answer the player's userQuestion. Do not invent a next sculpting task unless they asked what to do next. " +
-        "Give a short, easy, straight-to-the-point answer. Prefer 2 to 5 numbered steps. " +
-        "Use exact on-screen button labels (SELECT PART, CHANGE COLOR, LANTERN TASSEL, SEND, DONE). " +
+        "Use the game manual and current sculpture data. " +
+        "Answer only the player's userQuestion. " +
+        "Keep message under 25 words. One path only. No extra options. " +
+        "Use at most 3 short numbered steps, or one short sentence. " +
+        "Use exact button labels. " +
         "Use context.currentTool so lantern, teapot, and keris stay distinct. " +
-        "If currentStage is sculpt, they are still using gestures. If customize, start from the COLOR PALETTE. " +
-        "Do not click buttons, run Unity code, or change the sculpture. " +
+        "Do not click buttons or run Unity code. " +
         "Return only the required structured response. For how-to questions use feedbackType explanation.",
 
       input:
@@ -347,11 +321,6 @@ app.post("/api/feedback", aiLimiter, async (req, res) => {
     });
   }
 });
-
-
-// ==========================================
-// START SERVER
-// ==========================================
 
 app.listen(PORT, () => {
   console.log(`MORPHIC backend running on port ${PORT}`);
