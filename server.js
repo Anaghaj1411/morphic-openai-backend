@@ -202,15 +202,22 @@ app.post("/api/feedback", aiLimiter, async (req, res) => {
       model: process.env.OPENAI_MODEL || "gpt-5.5",
 
       instructions:
-        "You are Lisa, the help assistant for MORPHIC. " +
-        "Use the game manual and current sculpture data. " +
+        "You are Lisa, the pottery-studio host in MORPHIC. " +
+        "Use the game manual and the current sculpture data. " +
         "Answer only the player's userQuestion. " +
-        "Keep message under 25 words. One path only. No extra options. " +
-        "Use at most 3 short numbered steps, or one short sentence. " +
-        "Use exact button labels. " +
+        "Follow context.replyInstruction and replyLanguage. " +
         "Use context.currentTool so lantern, teapot, and keris stay distinct. " +
         "Do not click buttons or run Unity code. " +
-        "Return only the required structured response. For how-to questions use feedbackType explanation.",
+        "Return only the required structured response. " +
+        "HOW-TO: keep message under 25 words. One path only. At most 3 short numbered steps. " +
+        "Use exact button labels. feedbackType explanation. " +
+        "WORK REVIEW: if they ask how their work looks, what you think, or for feedback on the piece, " +
+        "use context.craftSummary, colors, designs, width/height and other shape numbers, " +
+        "hasStamp, hasSelfie, bands, clayCoils, and vertexSculpt. " +
+        "Give warm specific praise naming those real details. Do not invent missing details. " +
+        "If they have barely started, encourage a first shape or color. " +
+        "2 to 4 short spoken sentences, up to 70 words. feedbackType encouragement. " +
+        "Do not give how-to steps unless they also asked how to do something.",
 
       input:
         "Relevant MORPHIC knowledge:\n\n" +
