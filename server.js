@@ -63,6 +63,32 @@ app.get("/api/rag-test", async (req, res) => {
   }
 });
 
+app.post("/api/sculpture-data", async (req, res) => {
+  try {
+    const sculptureData = req.body;
+
+    if (!sculptureData || typeof sculptureData !== "object") {
+      return res.status(400).json({
+        success: false,
+        error: "Request body must be a JSON object."
+      });
+    }
+
+    res.json({
+      success: true,
+      sculptureData
+    });
+
+  } catch (error) {
+    console.error("Sculpture data retrieval failed:", error);
+
+    res.status(500).json({
+      success: false,
+      error: "Sculpture data retrieval failed."
+    });
+  }
+});
+
 app.post("/api/feedback-test", async (req, res) => {
   try {
     const sculptureData = req.body;
@@ -214,9 +240,15 @@ app.post("/api/feedback", aiLimiter, async (req, res) => {
         "WORK REVIEW: if they ask how their work looks, what you think, or for feedback on the piece, " +
         "use context.craftSummary, colors, designs, width/height and other shape numbers, " +
         "hasStamp, hasSelfie, bands, clayCoils, and vertexSculpt. " +
-        "Give warm specific praise naming those real details. Do not invent missing details. " +
-        "If they have barely started, encourage a first shape or color. " +
-        "2 to 4 short spoken sentences, up to 70 words. feedbackType encouragement. " +
+        "CRITICAL: Only comment on features that exist. Check if colors array has values before discussing colors. " +
+        "Check if hasHandle, hasSpout, hasLid, or similar booleans are true before mentioning those parts. " +
+        "Check if vertexSculpt or clayCoils have data before referencing them. " +
+        "If a feature is missing or false, do not mention it at all. " +
+        "First, praise specific strengths (colors that work well, interesting shapes, good patterns). " +
+        "Then, offer 1-2 constructive suggestions (try complementary colors, add contrast, balance proportions). " +
+        "Suggest specific color combinations or design ideas that would enhance the piece. " +
+        "Do not invent missing details. If they have barely started, encourage a first shape or color. " +
+        "3 to 5 short spoken sentences, up to 100 words. feedbackType encouragement. " +
         "Do not give how-to steps unless they also asked how to do something.",
 
       input:
