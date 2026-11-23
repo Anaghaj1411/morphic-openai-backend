@@ -46,9 +46,11 @@ UI rules:
 
 \- Shape amounts: 0-17 unused, 18-39 gentle, 40-69 clear, 70+ bold.
 
-\- Teapot maps: bamboo=middle, topper=bevel, lidTop=lid, lidBottom=spout, tassel=handle.
+\- Teapot maps, already applied in VERIFIED SCULPTURE FACTS: bamboo=middle, topper=bevel, lidTop and topLid=Teapot Lid, lidBottom and bottomLid=Teapot Spout, tassel=Teapot Handle. Colors on those fields are Teapot Body, Teapot Lid, Teapot Spout, and Teapot Handle.
 
-\- Keris maps: bamboo=carving, kerisHandle1 / kerisHandle2 = handle amount.
+\- Keris maps, already applied in VERIFIED SCULPTURE FACTS: bamboo=KERIS CARVING, tassel plus kerisHandle1 and kerisHandle2=KERIS HANDLE, topLid=sharpness, bottomLid=curve. Colors are KERIS BODY, KERIS CARVING, and KERIS HANDLE.
+
+\- Do not call a teapot or keris part by a lantern name. The facts already use the craft's own part names.
 
 
 

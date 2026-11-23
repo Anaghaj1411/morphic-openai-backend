@@ -266,10 +266,11 @@ app.post("/api/feedback", aiLimiter, async (req, res) => {
         "Attach a color to a part only when that part is listed beside the color. " +
         "If the facts say the part is unknown, talk about the overall palette and do not assign the color to a top, bottom, body, tassel, lid, spout, handle, blade, or carving. " +
         "If the facts say no colors are recorded, do not mention color at all. " +
-        "PART NAMES: Use exact part names from the game manual. " +
-        "For lantern: 'Lantern Top' (top cap), 'Lantern Bottom' (base), 'Lantern Tassel', 'Lantern Body'. Do not confuse these. " +
-        "For teapot: 'Teapot Lid', 'Teapot Spout', 'Teapot Handle', 'Teapot Body'. Do not confuse these. " +
-        "For keris: 'KERIS BODY' (blade), 'KERIS CARVING' (decorative overlay), 'KERIS HANDLE' (grip). Do not confuse these. " +
+        "PART NAMES: VERIFIED SCULPTURE FACTS already use the names for the current craft. Say those names and do not translate them again. " +
+        "Lantern parts are Lantern Body, Lantern Top, Lantern Bottom, and Lantern Tassel. " +
+        "Teapot parts are Teapot Body, Teapot Lid, Teapot Spout, and Teapot Handle. " +
+        "Keris parts are KERIS BODY, KERIS CARVING, and KERIS HANDLE. " +
+        "Never use a lantern part name on a teapot or keris, or a teapot part name on a keris. " +
         "First, praise specific strengths with genuine enthusiasm (colors that work well, interesting shapes, good patterns). " +
         "Use varied praise phrases: 'That's gorgeous!', 'I really like...', 'Wonderful choice of...', 'You've got a great eye for...' " +
         "Then, offer 1-2 gentle, constructive suggestions (try complementary colors, add contrast, balance proportions). " +
