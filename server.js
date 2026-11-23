@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import OpenAI from "openai";
 import { retrieveKnowledge } from "./knowledge/retriever.js";
+import { buildSculptureFacts, formatSculptureFacts } from "./lib/sculptureFacts.js";
 import { rateLimit } from "express-rate-limit";
 
 const app = express();
@@ -146,14 +147,19 @@ app.post("/api/feedback-test", async (req, res) => {
       .map((result) => result.content)
       .join("\n\n---\n\n");
 
+    const sculptureFacts = formatSculptureFacts(buildSculptureFacts(sculptureData));
+
     res.json({
       success: true,
       testMode: true,
       knowledgeQuery,
       retrievedResults: knowledgeResults,
+      sculptureFacts,
       preparedInput:
         "Relevant MORPHIC knowledge:\n\n" +
         knowledgeContext +
+        "\n\n" +
+        sculptureFacts +
         "\n\nCurrent sculpture data:\n\n" +
         JSON.stringify(sculptureData)
     });
@@ -232,6 +238,8 @@ app.post("/api/feedback", aiLimiter, async (req, res) => {
       .map((result) => result.content)
       .join("\n\n---\n\n");
 
+    const sculptureFacts = formatSculptureFacts(buildSculptureFacts(sculptureData));
+
     const response = await client.responses.create({
       model: process.env.OPENAI_MODEL || "gpt-5.5",
 
@@ -249,20 +257,15 @@ app.post("/api/feedback", aiLimiter, async (req, res) => {
         "HOW-TO: keep message under 25 words. One path only. At most 3 short numbered steps. " +
         "Use exact button labels. feedbackType explanation. " +
         "WORK REVIEW: if they ask how their work looks, what you think, or for feedback on the piece, " +
-        "use context.craftSummary, colors, designs, width/height and other shape numbers, " +
-        "hasStamp, hasSelfie, bands, clayCoils, and vertexSculpt. " +
-        "CRITICAL: Only comment on features that exist. Check if colors array has values before discussing colors. " +
-        "Check if hasHandle, hasSpout, hasLid, or similar booleans are true before mentioning those parts. " +
-        "Check if vertexSculpt or clayCoils have data before referencing them. " +
-        "If a feature is missing or false, do not mention it at all. " +
-        "COLOR INTERPRETATION: The colors array contains hex codes but may not indicate which part each color belongs to. " +
-        "Do NOT guess or assume which color goes to which part (top, bottom, body, tassel, etc.). " +
-        "Only mention colors if the data clearly includes part-specific color labels (e.g., 'topColor', 'bottomColor', 'bodyColor'). " +
-        "If colors are just a generic array without part labels, describe the overall color scheme generally without assigning specific colors to specific parts. " +
-        "CRITICAL: Do NOT invent or hallucinate color names like 'terracotta', 'crimson', 'azure', etc. " +
-        "Only describe colors using the actual hex codes from the data (e.g., '#FF6B35') or generic terms based on those hex codes (e.g., 'orange', 'red', 'blue'). " +
-        "If the data includes color name labels, use those exact names. If not, use simple color descriptions like 'red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pink', 'brown', 'black', 'white', 'gray'. " +
-        "Never invent fanciful or specific color names that are not in the data." +
+        "use only VERIFIED SCULPTURE FACTS. Those facts already read craftSummary, colors, designs, " +
+        "width/height and other shape numbers, hasStamp, hasSelfie, bands, clayCoils, and vertexSculpt. " +
+        "CRITICAL: Only comment on features listed as present or given a value. " +
+        "If a feature is absent or unrecorded, do not mention it. " +
+        "COLORS: Never name a color from a hex code yourself. The facts already name every recorded color. " +
+        "Use those exact color words. Do not say terracotta, crimson, azure, mauve, or any name that is not in the facts. " +
+        "Attach a color to a part only when that part is listed beside the color. " +
+        "If the facts say the part is unknown, talk about the overall palette and do not assign the color to a top, bottom, body, tassel, lid, spout, handle, blade, or carving. " +
+        "If the facts say no colors are recorded, do not mention color at all. " +
         "PART NAMES: Use exact part names from the game manual. " +
         "For lantern: 'Lantern Top' (top cap), 'Lantern Bottom' (base), 'Lantern Tassel', 'Lantern Body'. Do not confuse these. " +
         "For teapot: 'Teapot Lid', 'Teapot Spout', 'Teapot Handle', 'Teapot Body'. Do not confuse these. " +
@@ -280,8 +283,11 @@ app.post("/api/feedback", aiLimiter, async (req, res) => {
       input:
         "Relevant MORPHIC knowledge:\n\n" +
         knowledgeContext +
+        "\n\n" +
+        sculptureFacts +
         "\n\nCurrent sculpture data:\n\n" +
-        JSON.stringify(sculptureData),
+        JSON.stringify(sculptureData) +
+        "\n\nIf the raw JSON and VERIFIED SCULPTURE FACTS disagree, trust the facts.",
 
       text: {
         format: {
